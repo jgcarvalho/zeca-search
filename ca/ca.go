@@ -1,0 +1,71 @@
+package ca
+
+import (
+	"math"
+
+	"github.com/jgcarvalho/zeca-search/rules"
+)
+
+type Config struct {
+	InitState []string
+	EndState  []string
+	// 	TransStates    []string `toml:"transition-states"`
+	// 	Hydrophobicity string   `toml:"hydrophobicity"`
+	// 	R              int      `toml:"r"`
+	Steps int `toml:"steps"`
+	// Consensus int `toml:"consensus"`
+	IgnoreSteps int `toml:"ignore-steps"`
+}
+
+func (conf Config) Run(rule rules.Rule) float64 {
+	var init, end, previous, current []string
+	init = make([]string, len(conf.InitState))
+	end = make([]string, len(conf.EndState))
+	copy(init, conf.InitState)
+	copy(end, conf.EndState)
+	if len(init) != len(end) {
+		panic("Init and End States have diffent lenghts")
+	}
+	previous = make([]string, len(conf.InitState))
+	copy(previous, init)
+	current = make([]string, len(init))
+
+	occurrence := make([]int, len(init))
+	occurrence[0], occurrence[len(init)-1] = conf.Steps-conf.IgnoreSteps, conf.Steps-conf.IgnoreSteps
+
+	// set begin and end equals to # (static states)
+	current[0], current[len(init)-1] = "#", "#"
+
+	// fmt.Println(init)
+	// fmt.Println(end)
+	for i := 0; i < conf.Steps; i++ {
+		for c := 1; c < len(init)-1; c++ {
+			current[c] = rule[rules.Pattern{previous[c-1], previous[c], previous[c+1]}]
+			if string(current[c][0]) == "?" {
+				current[c] = init[c]
+			}
+			if i >= conf.IgnoreSteps {
+				if current[c] == end[c] || string(end[c]) == "?" {
+					occurrence[c] += 1
+				}
+			}
+		}
+		// fmt.Println(current)
+		copy(previous, current)
+	}
+	// fmt.Println(occurrence)
+	// fmt.Println(score(occurrence, conf.Steps-conf.IgnoreSteps))
+	return score(occurrence, conf.Steps-conf.IgnoreSteps)
+}
+
+func score(oc []int, norm int) float64 {
+	var sc float64
+	for i := 0; i < len(oc); i++ {
+		if oc[i] == 0 {
+			sc += math.Log(0.001)
+		} else {
+			sc += math.Log(float64(oc[i]) / float64(norm))
+		}
+	}
+	return sc / float64(len(oc))
+}

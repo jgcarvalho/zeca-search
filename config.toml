@@ -1,0 +1,31 @@
+title = "Distributed EDA config"
+
+[dist]
+	master-url = "localhost"
+	port-a = "5557"
+	port-b = "5558"
+
+#[algorithm]
+#	method = "eda"
+
+[eda]
+	generations = 100
+	population = 100
+	tournament = 2
+	output-probabilities = "./output-probabilities-eda"
+	save-steps = 1000
+
+[rules]
+	input = "/home/jgcarvalho/gocode/src/github.com/jgcarvalho/zeca-create-rule/simple.rule"
+	output = "./output-rules"
+
+[db]
+	db-dir = "/home/jgcarvalho/sync/data/multissdb/"
+	db-name = "chameleonic.db"
+	bucket-name = "proteins"
+	init = "Seq"
+	target = "All3"
+
+[ca]
+	steps = 1000
+	ignore-steps = 100
