@@ -50,7 +50,7 @@ func RunSlave(conf Config) {
 		conerr error
 	)
 
-	cellAuto := ca.Config{InitState: start, EndState: end}
+	cellAuto := ca.Config{InitState: start, EndState: end, Steps: conf.CA.Steps, IgnoreSteps: conf.CA.IgnoreSteps}
 
 	for {
 		// m é a mensagem com as probabilidades
@@ -64,7 +64,7 @@ func RunSlave(conf Config) {
 
 			for i := 0; i < conf.EDA.Tournament; i++ {
 				rule := GenRule(prob)
-				fmt.Println(prob)
+				// fmt.Println(rule)
 				// fmt.Println(start, end, tourn, ind, b, rule)
 				score := cellAuto.Run(rule)
 				fmt.Println(score)
