@@ -71,3 +71,30 @@ func GenRule(prob Probabilities) rules.Rule {
 	}
 	return rule
 }
+
+func (prob Probabilities) Save(fn string) {
+	f, err := os.Create(fn)
+	if err != nil {
+		fmt.Println("Error writing probabilities", err)
+		panic(err)
+	}
+	defer f.Close()
+
+	pk := prob.Data
+	var tstates []string
+	for k, v := range pk {
+		// result += fmt.Sprintf("[ %s ][ %s ][ %s ] -> {", k[0], k[1], k[2])
+		f.WriteString(fmt.Sprintf("[ %s ][ %s ][ %s ] -> {", k[0], k[1], k[2]))
+		tstates = make([]string, len(v))
+		i := 0
+		for s, _ := range v {
+			tstates[i] = s
+			i++
+		}
+		sort.Strings(tstates)
+		for _, st := range tstates {
+			f.WriteString(fmt.Sprintf(" %s : %.4f,", st, v[st]))
+		}
+		f.WriteString(fmt.Sprintf("}\n"))
+	}
+}

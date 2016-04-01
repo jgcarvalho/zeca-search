@@ -25,35 +25,6 @@ type Config struct {
 	Target string `toml:"target"`
 }
 
-type Protein struct {
-	ID string
-	//original
-	Seq    string
-	Dssp   string
-	Stride string
-	Kaksi  string
-	Pross  string
-	//processed
-	Dssp3   string
-	Stride3 string
-	Kaksi3  string
-	Pross3  string
-	// consensus 2
-	DsspStride3  string
-	DsspKaksi3   string
-	DsspPross3   string
-	StrideKaksi3 string
-	StridePross3 string
-	KaksiPross3  string
-	// consensus 3
-	DsspStrideKaksi3  string
-	DsspStridePross3  string
-	DsspKaksiPross3   string
-	StrideKaksiPross3 string
-	// consensus 4
-	All3 string
-}
-
 func LoadProteinsFromBoltDB(dirname, dbname, bucket string) []Protein {
 	db, err := bolt.Open(dirname+dbname, 0666, &bolt.Options{ReadOnly: true})
 	if err != nil {
@@ -81,19 +52,25 @@ func LoadProteinsFromBoltDB(dirname, dbname, bucket string) []Protein {
 	return result
 }
 
-func (c *Protein) getField(field string) string {
+func (c *Protein) getField(field string) []string {
 	r := reflect.ValueOf(c)
 	s := reflect.Indirect(r).FieldByName(field)
-	return s.String()
+	return s.Interface().([]string)
 }
 
-func GetProteins(db Config) (start, end string, e error) {
+// TODO change string to []string
+func GetProteins(db Config) (start, end []string, e error) {
 	proteins := LoadProteinsFromBoltDB(db.Dir, db.Name, db.Bucket)
-	start = "#"
-	end = "#"
+	start = []string{"#"}
+	end = []string{"#"}
 	for i := 0; i < len(proteins); i++ {
-		start += proteins[i].getField(strings.Title(db.Init)) + "#"
-		end += proteins[i].getField(strings.Title(db.Target)) + "#"
+		// start = append(start, strings.Split(proteins[i].getField(strings.Title(db.Init)), "")...)
+		start = append(start, proteins[i].getField(strings.Title(db.Init))...)
+		start = append(start, "#")
+		end = append(end, proteins[i].getField(strings.Title(db.Target))...)
+		end = append(end, "#")
+		// start += proteins[i].getField(strings.Title(db.Init)) + "#"
+		// end += proteins[i].getField(strings.Title(db.Target)) + "#"
 		// start += proteins[i].Chains[0].getField(strings.Title(db.Init)) + "#"
 		// end += proteins[i].Chains[0].getField(strings.Title(db.Target)) + "#"
 	}

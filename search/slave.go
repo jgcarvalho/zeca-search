@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 
 	"github.com/jgcarvalho/zeca-search/ca"
+	"github.com/jgcarvalho/zeca-search/db"
 	zmq "github.com/pebbe/zmq4"
 )
 
@@ -29,13 +31,20 @@ func RunSlave(conf Config) {
 
 	// Le os dados das proteinas no DB
 	fmt.Println("Loading proteins...")
-	// start, end, err := db.GetProteins(conf.DB)
-	start, end := []string{"#", "M", "A", "D", "F", "G", "H", "I", "K", "#", "A", "A", "#"},
-		[]string{"#", "_", "_", "*", "*", "*", "*", "_", "|", "#", "|", "_", "#"}
-	// if err != nil {
-	// 	fmt.Println("Erro no banco de DADOS")
-	// 	panic(err)
-	// }
+	start, end, err := db.GetProteins(conf.DB)
+	if err != nil {
+		fmt.Println("Erro no banco de DADOS")
+		panic(err)
+	}
+
+	// ALERT THE CODE BELOW IS ONLY FOR TEST
+	// start, end := []string{"#", "M", "A", "D", "F", "G", "H", "I", "K", "#", "A", "A", "#"},
+	// 	[]string{"#", "_", "_", "*", "*", "*", "*", "_", "|", "#", "|", "_", "#"}
+	// start, end := []string{"#", "In", "An", "Dp", "Fn", "GG", "Ln", "In", "Kp", "#", "Ep", "PP", "#"},
+	// 	[]string{"#", "_n", "_n", "*p", "*n", "*G", "*n", "_n", "|p", "#", "|p", "_P", "#"}
+	// start, end := []string{"#", "Ep", "PP", "#"},
+	// 	[]string{"#", "|p", "_P", "#"}
+
 	fmt.Println("Done")
 
 	var prob Probabilities
@@ -60,14 +69,14 @@ func RunSlave(conf Config) {
 			decoder := gob.NewDecoder(read)
 			decoder.Decode(&prob)
 			// json.Unmarshal([]byte(m), &prob)
-			fmt.Printf("PID: %d, Geracacao: %d\n", prob.PID, prob.Generation)
+			// fmt.Printf("PID: %d, Geracacao: %d\n", prob.PID, prob.Generation)
 
 			for i := 0; i < conf.EDA.Tournament; i++ {
 				rule := GenRule(prob)
 				// fmt.Println(rule)
 				// fmt.Println(start, end, tourn, ind, b, rule)
 				score := cellAuto.Run(rule)
-				fmt.Println(score)
+				// fmt.Println(score)
 				if i == 0 {
 					winner = Individual{PID: prob.PID, Generation: prob.Generation, Rule: &rule, Score: score}
 				} else {
@@ -75,6 +84,11 @@ func RunSlave(conf Config) {
 						winner = Individual{PID: prob.PID, Generation: prob.Generation, Rule: &rule, Score: score}
 					}
 				}
+			}
+
+			// GOB DOES NOT ENCODE ZERO VALUES, SO ....
+			if winner.Score == 0.0 {
+				winner.Score = math.SmallestNonzeroFloat64
 			}
 
 			write := new(bytes.Buffer)

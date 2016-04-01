@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
+	"strconv"
 
 	"github.com/gonum/stat"
 	zmq "github.com/pebbe/zmq4"
@@ -109,6 +111,7 @@ func RunMaster(conf Config) {
 				read := bytes.NewBuffer(m)
 				decoder := gob.NewDecoder(read)
 				decoder.Decode(&pop[i])
+				// fmt.Println("Winner Score:", pop[i].Score)
 				// Checa pelo ID da probabilidade se o individuo vencedor que chegou foi
 				// gerado pela última probabilidade que foi emitida
 				if prob.PID == pop[i].PID {
@@ -116,6 +119,7 @@ func RunMaster(conf Config) {
 					// popFitness[i] = pop[i].Fitness
 					// popQ3[i] = pop[i].Q3
 					popScore[i] = pop[i].Score
+					// fmt.Printf("Score: %.3f, Novo Score: %.3f\n", popScore[i], pop[i].Score)
 					i++
 				} else {
 					fmt.Println(prob.PID, pop[i].PID)
@@ -130,10 +134,10 @@ func RunMaster(conf Config) {
 		// TODO criar um mecanismo para contornar falhas nos nós
 
 		// // imprimir e as estatisticas// salva as probabilidades a cada geração
-		// err := ioutil.WriteFile(conf.EDA.OutputProbs+"_g"+strconv.Itoa(g), []byte(p.String()), 0644)
+		prob.Save(conf.EDA.OutputProbs + "_g" + strconv.Itoa(g))
+		// go ioutil.WriteFile(conf.EDA.OutputProbs+"_g"+strconv.Itoa(g), []byte(prob.Data.String()), 0644)
 		// if err != nil {
 		// 	fmt.Println("Erro gravar as probabilidades")
-		// 	fmt.Println(p)
 		// }
 
 		//  imprimir e as estatisticas
@@ -142,7 +146,8 @@ func RunMaster(conf Config) {
 		meanScore, stdScore := stat.MeanStdDev(popScore, nil)
 		// fstat.WriteString(fmt.Sprintf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Mean: %.5f, StdDev: %.5f, Mean Q3: %.5f, StdDev Q3: %.5f, \n", g, meanScore, stdScore, meanFit, stdFit, meanQ3, stdQ3))
 		// fmt.Printf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Mean: %.5f, StdDev: %.5f, Mean Q3: %.5f, StdDev Q3: %.5f, \n", g, meanScore, stdScore, meanFit, stdFit, meanQ3, stdQ3)
-		fstat.WriteString(fmt.Sprintf("G: %d, Mean Score: %.5f, StdDev Score: %.5f\n", g, meanScore, stdScore))
-		fmt.Printf("G: %d, Mean Score: %.5f, StdDev Score: %.5f\n", g, meanScore, stdScore)
+		fstat.WriteString(fmt.Sprintf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Correct States: %.2f %%\n", g, meanScore, stdScore, 100.0*math.Exp(meanScore)))
+		fmt.Printf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Correct States: %.2f %%\n", g, meanScore, stdScore, 100.0*math.Exp(meanScore))
+
 	}
 }
