@@ -32,16 +32,38 @@ func ReadProbRule(fn string) ProbRule {
 	return pr
 }
 
-func (pk ProbRule) Update(pop []Individual) {
+// func (pk ProbRule) Update(pop []Individual) {
+// 	for pattern, _ := range pk {
+// 		for k, _ := range pk[pattern] {
+// 			pk[pattern][k] = 0.0
+// 		}
+// 	}
+//
+// 	for i := 0; i < len(pop); i++ {
+// 		for pattern, v := range *pop[i].Rule {
+// 			pk[pattern][v] += 1.0 / float64(len(pop))
+// 		}
+// 	}
+// }
+
+func (newpk ProbRule) Update(ind Individual, norm int) {
+	for pattern, v := range *ind.Rule {
+		newpk[pattern][v] += 1.0 / float64(norm)
+	}
+}
+
+func (pk ProbRule) Reset() {
 	for pattern, _ := range pk {
 		for k, _ := range pk[pattern] {
 			pk[pattern][k] = 0.0
 		}
 	}
+}
 
-	for i := 0; i < len(pop); i++ {
-		for pattern, v := range *pop[i].Rule {
-			pk[pattern][v] += 1.0 / float64(len(pop))
+func (pk ProbRule) Copy(newPk ProbRule) {
+	for pattern, _ := range newPk {
+		for k, _ := range newPk[pattern] {
+			pk[pattern][k] = newPk[pattern][k]
 		}
 	}
 }

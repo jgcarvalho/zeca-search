@@ -47,7 +47,7 @@ func (conf Config) Run(rule rules.Rule) float64 {
 			}
 			if i >= conf.IgnoreSteps {
 				if current[c] == end[c] || string(end[c]) == "?" {
-					occurrence[c] += 1
+					occurrence[c]++
 				}
 			}
 		}
@@ -55,18 +55,23 @@ func (conf Config) Run(rule rules.Rule) float64 {
 		copy(previous, current)
 	}
 	fmt.Println(occurrence)
-	fmt.Println(score(occurrence, conf.Steps-conf.IgnoreSteps))
-	return score(occurrence, conf.Steps-conf.IgnoreSteps)
+	fmt.Println("SCORE:", score(occurrence, end, conf.Steps-conf.IgnoreSteps))
+	return score(occurrence, end, conf.Steps-conf.IgnoreSteps)
 }
 
-func score(oc []int, norm int) float64 {
-	var sc float64
+func score(oc []int, end []string, norm int) float64 {
+	var sc, valid float64
+
 	for i := 0; i < len(oc); i++ {
-		if oc[i] == 0 {
-			sc += math.Log(0.001)
-		} else {
-			sc += math.Log(float64(oc[i]) / float64(norm))
+		// esclui do calculo os estados # (inicio e fim da cadeia) e ? (indeterminado)
+		if string(end[i][0]) != "?" && string(end[i][0]) != "#" {
+			valid += 1.0
+			if oc[i] == 0 {
+				sc += math.Log(0.001)
+			} else {
+				sc += math.Log(float64(oc[i]) / float64(norm))
+			}
 		}
 	}
-	return sc / float64(len(oc))
+	return sc / float64(valid)
 }

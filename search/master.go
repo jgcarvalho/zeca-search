@@ -16,6 +16,8 @@ import (
 func RunMaster(conf Config) {
 	// Le as probabilidades da regra
 	pk := ReadProbRule(conf.Rules.Input)
+	newPk := ReadProbRule(conf.Rules.Input)
+	newPk.Reset()
 
 	// cria o emissor que envia as probabilidades para toda a rede na porta A
 	sender, _ := zmq.NewSocket(zmq.PUSH)
@@ -29,8 +31,9 @@ func RunMaster(conf Config) {
 
 	// a população do DistEDA será de apenas vencedores dos torneios locais,
 	// realizados nos slaves. Portanto, população é igual população/n_torneio
-	var pop []Individual
-	pop = make([]Individual, conf.EDA.Population/conf.EDA.Tournament)
+	// var pop []Individual
+	// pop = make([]Individual, conf.EDA.Population/conf.EDA.Tournament)
+	var winner Individual
 
 	// popFitness := make([]float64, conf.EDA.Population/conf.EDA.Tournament)
 	// popQ3 := make([]float64, conf.EDA.Population/conf.EDA.Tournament)
@@ -66,7 +69,10 @@ func RunMaster(conf Config) {
 		fmt.Println("GERACAO", g)
 
 		if g != 0 {
-			pk.Update(pop)
+			// set new probabitility
+			// pk.Update(pop)
+			pk.Copy(newPk)
+			newPk.Reset()
 		}
 
 		// Criar as probabilidades para serem enviadas no formato JSON.
@@ -98,31 +104,36 @@ func RunMaster(conf Config) {
 		// }(&b)
 
 		go func(w *bytes.Buffer) {
-			for i := 0; i < len(pop); i++ {
+			for i := 0; i < conf.EDA.Population/conf.EDA.Tournament; i++ {
 				sender.SendBytes(w.Bytes(), 0)
 			}
 		}(write)
 
 		// Capta os individuos vencedores gerados pelos slaves
-		for i := 0; i < len(pop); {
+		for i := 0; i < conf.EDA.Population/conf.EDA.Tournament; {
 			m, err := receiver.RecvBytes(0)
 			if err == nil {
 				// json.Unmarshal([]byte(m), &pop[i])
 				read := bytes.NewBuffer(m)
 				decoder := gob.NewDecoder(read)
-				decoder.Decode(&pop[i])
+				// decoder.Decode(&pop[i])
+				decoder.Decode(&winner)
 				// fmt.Println("Winner Score:", pop[i].Score)
 				// Checa pelo ID da probabilidade se o individuo vencedor que chegou foi
 				// gerado pela última probabilidade que foi emitida
-				if prob.PID == pop[i].PID {
+				// if prob.PID == pop[i].PID {
+				if prob.PID == winner.PID {
 					// fmt.Printf("Individuo id: %d rid: %d g: %d, score: %f\n", g*len(pop)+i, pop[i].PID, pop[i].Generation, pop[i].Fitness)
 					// popFitness[i] = pop[i].Fitness
 					// popQ3[i] = pop[i].Q3
-					popScore[i] = pop[i].Score
+					// popScore[i] = pop[i].Score
+					popScore[i] = winner.Score
+					newPk.Update(winner, conf.EDA.Population/conf.EDA.Tournament)
 					// fmt.Printf("Score: %.3f, Novo Score: %.3f\n", popScore[i], pop[i].Score)
 					i++
 				} else {
-					fmt.Println(prob.PID, pop[i].PID)
+					// fmt.Println(prob.PID, pop[i].PID)
+					fmt.Println(prob.PID, winner.PID)
 				}
 
 			} else {
