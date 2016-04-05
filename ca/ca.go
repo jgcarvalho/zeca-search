@@ -39,23 +39,37 @@ func (conf Config) Run(rule rules.Rule) float64 {
 
 	fmt.Println(init)
 	fmt.Println(end)
+	use := false
 	for i := 0; i < conf.Steps; i++ {
-		for c := 1; c < len(init)-1; c++ {
-			current[c] = rule[rules.Pattern{previous[c-1], previous[c], previous[c+1]}]
-			if string(current[c][0]) == "?" {
-				current[c] = init[c]
-			}
-			if i >= conf.IgnoreSteps {
-				if current[c] == end[c] || string(end[c]) == "?" {
-					occurrence[c]++
-				}
-			}
+		if i >= conf.IgnoreSteps {
+			use = true
 		}
-		fmt.Println(current)
-		copy(previous, current)
+		if i%2 == 0 {
+			step(&previous, &current, &init, &end, &occurrence, &rule, use)
+			fmt.Println(current)
+		} else {
+			step(&current, &previous, &init, &end, &occurrence, &rule, use)
+			fmt.Println(previous)
+		}
+
+		// // change
+		// for c := 1; c < len(init)-1; c++ {
+		// 	current[c] = rule[rules.Pattern{previous[c-1], previous[c], previous[c+1]}]
+		// 	if string(current[c][0]) == "?" {
+		// 		current[c] = init[c]
+		// 	}
+		// 	if i >= conf.IgnoreSteps {
+		// 		if current[c] == end[c] || string(end[c]) == "?" {
+		// 			occurrence[c]++
+		// 		}
+		// 	}
+		// }
+		// // fmt.Println(current)
+		// copy(previous, current)
+		// // end change
 	}
 	fmt.Println(occurrence)
-	fmt.Println("SCORE:", score(occurrence, end, conf.Steps-conf.IgnoreSteps))
+	// fmt.Println("SCORE:", score(occurrence, end, conf.Steps-conf.IgnoreSteps))
 	return score(occurrence, end, conf.Steps-conf.IgnoreSteps)
 }
 
@@ -74,4 +88,18 @@ func score(oc []int, end []string, norm int) float64 {
 		}
 	}
 	return sc / float64(valid)
+}
+
+func step(previous, current, init, end *[]string, occurrence *[]int, rule *rules.Rule, use bool) {
+	for c := 1; c < len(*init)-1; c++ {
+		(*current)[c] = (*rule)[rules.Pattern{(*previous)[c-1], (*previous)[c], (*previous)[c+1]}]
+		if string((*current)[c][0]) == "?" {
+			(*current)[c] = (*init)[c]
+		}
+		if use {
+			if (*current)[c] == (*end)[c] || string((*end)[c]) == "?" {
+				(*occurrence)[c]++
+			}
+		}
+	}
 }
