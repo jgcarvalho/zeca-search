@@ -128,7 +128,7 @@ func RunMaster(conf Config) {
 					// popQ3[i] = pop[i].Q3
 					// popScore[i] = pop[i].Score
 					popScore[i] = winner.Score
-					newPk.Update(winner, conf.EDA.Population/conf.EDA.Tournament)
+					newPk.Update(&winner, conf.EDA.Population/conf.EDA.Tournament)
 					// fmt.Printf("Score: %.3f, Novo Score: %.3f\n", popScore[i], pop[i].Score)
 					i++
 				} else {

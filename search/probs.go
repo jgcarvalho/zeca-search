@@ -46,9 +46,9 @@ func ReadProbRule(fn string) ProbRule {
 // 	}
 // }
 
-func (newpk ProbRule) Update(ind Individual, norm int) {
+func (newpk *ProbRule) Update(ind *Individual, norm int) {
 	for pattern, v := range *ind.Rule {
-		newpk[pattern][v] += 1.0 / float64(norm)
+		(*newpk)[pattern][v] += 1.0 / float64(norm)
 	}
 }
 
