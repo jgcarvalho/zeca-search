@@ -1,7 +1,6 @@
 package ca
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/jgcarvalho/zeca-search/rules"
@@ -37,8 +36,8 @@ func (conf Config) Run(rule rules.Rule) float64 {
 	// set begin and end equals to # (static states)
 	current[0], current[len(init)-1] = "#", "#"
 
-	fmt.Println(init)
-	fmt.Println(end)
+	// fmt.Println(init)
+	// fmt.Println(end)
 	use := false
 	for i := 0; i < conf.Steps; i++ {
 		if i >= conf.IgnoreSteps {
@@ -46,10 +45,10 @@ func (conf Config) Run(rule rules.Rule) float64 {
 		}
 		if i%2 == 0 {
 			step(&previous, &current, &init, &end, &occurrence, &rule, use)
-			fmt.Println(current)
+			// fmt.Println(current)
 		} else {
 			step(&current, &previous, &init, &end, &occurrence, &rule, use)
-			fmt.Println(previous)
+			// fmt.Println(previous)
 		}
 
 		// // change
@@ -68,7 +67,7 @@ func (conf Config) Run(rule rules.Rule) float64 {
 		// copy(previous, current)
 		// // end change
 	}
-	fmt.Println(occurrence)
+	// fmt.Println(occurrence)
 	// fmt.Println("SCORE:", score(occurrence, end, conf.Steps-conf.IgnoreSteps))
 	return score(occurrence, end, conf.Steps-conf.IgnoreSteps)
 }
