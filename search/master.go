@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/gonum/stat"
+	"github.com/jgcarvalho/zeca-search/rules"
 	zmq "github.com/pebbe/zmq4"
 )
 
@@ -34,6 +35,8 @@ func RunMaster(conf Config) {
 	// var pop []Individual
 	// pop = make([]Individual, conf.EDA.Population/conf.EDA.Tournament)
 	var winner Individual
+	var best Individual
+	best.Score = -1000.0
 
 	// popFitness := make([]float64, conf.EDA.Population/conf.EDA.Tournament)
 	// popQ3 := make([]float64, conf.EDA.Population/conf.EDA.Tournament)
@@ -130,6 +133,10 @@ func RunMaster(conf Config) {
 					popScore[i] = winner.Score
 					newPk.Update(&winner, conf.EDA.Population/conf.EDA.Tournament)
 					// fmt.Printf("Score: %.3f, Novo Score: %.3f\n", popScore[i], pop[i].Score)
+					if winner.Score > best.Score {
+						best.copy(winner)
+					}
+
 					i++
 				} else {
 					// fmt.Println(prob.PID, pop[i].PID)
@@ -146,6 +153,7 @@ func RunMaster(conf Config) {
 
 		// // imprimir e as estatisticas// salva as probabilidades a cada geração
 		prob.Save(conf.EDA.OutputProbs + "_g" + strconv.Itoa(g))
+		SaveBest(&best)
 		// go ioutil.WriteFile(conf.EDA.OutputProbs+"_g"+strconv.Itoa(g), []byte(prob.Data.String()), 0644)
 		// if err != nil {
 		// 	fmt.Println("Erro gravar as probabilidades")
@@ -158,7 +166,36 @@ func RunMaster(conf Config) {
 		// fstat.WriteString(fmt.Sprintf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Mean: %.5f, StdDev: %.5f, Mean Q3: %.5f, StdDev Q3: %.5f, \n", g, meanScore, stdScore, meanFit, stdFit, meanQ3, stdQ3))
 		// fmt.Printf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Mean: %.5f, StdDev: %.5f, Mean Q3: %.5f, StdDev Q3: %.5f, \n", g, meanScore, stdScore, meanFit, stdFit, meanQ3, stdQ3)
 		fstat.WriteString(fmt.Sprintf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Correct States: %.2f %%\n", g, meanScore, stdScore, 100.0*math.Exp(meanScore)))
+		fstat.WriteString(fmt.Sprintf("BEST G: %d, Score: %.5f, Correct States: %.2f %%\n", best.Generation, best.Score, 100.0*math.Exp(best.Score)))
 		fmt.Printf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Correct States: %.2f %%\n", g, meanScore, stdScore, 100.0*math.Exp(meanScore))
-
+		fmt.Printf("BEST G: %d, Score: %.5f, Correct States: %.2f %%\n", best.Generation, best.Score, 100.0*math.Exp(best.Score))
 	}
+}
+
+func (best *Individual) copy(ind Individual) {
+	best.PID = ind.PID
+	best.Generation = ind.Generation
+	best.Score = ind.Score
+	rule := make(rules.Rule, len(*ind.Rule))
+	for k, v := range *ind.Rule {
+		rule[k] = v
+	}
+	best.Rule = &rule
+	// rule := make(rules.Rule, len(ind.Rule))
+	// best.Rule = make(ind.Rule
+}
+
+func SaveBest(best *Individual) {
+	f, err := os.Create("best.rule")
+	if err != nil {
+		fmt.Println("Error writing probabilities", err)
+		panic(err)
+	}
+	defer f.Close()
+
+	rule := best.Rule
+	for k, v := range *rule {
+		f.WriteString(fmt.Sprintf("[ %s ][ %s ][ %s ] -> [ %s ]\n", k[0], k[1], k[2], v))
+	}
+	f.WriteString(fmt.Sprintf("# Score: %.5f, Correct States: %.2f %%\n", best.Score, 100.0*math.Exp(best.Score)))
 }
