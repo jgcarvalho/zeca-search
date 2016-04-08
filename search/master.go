@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -68,6 +69,18 @@ func RunMaster(conf Config) {
 	// Inicio do processamento
 	fmt.Println("RUNNING MASTER")
 	// para cada geracao
+
+	// var write bytes.Buffer
+	// encoder := gob.NewEncoder(&write)
+	var read bytes.Buffer
+	// read.Grow(1000000)
+	gob.RegisterName("winner", Individual{})
+	decoder := gob.NewDecoder(&read)
+
+	var write bytes.Buffer
+	gob.RegisterName("probs", Probabilities{})
+	encoder := gob.NewEncoder(&write)
+
 	for g := 0; g < conf.EDA.Generations; g++ {
 		fmt.Println("GERACAO", g)
 
@@ -81,8 +94,10 @@ func RunMaster(conf Config) {
 		// Criar as probabilidades para serem enviadas no formato JSON.
 		// Será enviado o ID (PID) = hash da probabilidade, o número da geração e as
 		// probabilidades
-		write := new(bytes.Buffer)
-		encoder := gob.NewEncoder(write)
+		// write := new(bytes.Buffer)
+		// encoder := gob.NewEncoder(write)
+		// write.Reset()
+		write.Reset()
 		prob := &Probabilities{PID: rand.Uint32(), Generation: g, Data: pk}
 		encoder.Encode(prob)
 
@@ -110,22 +125,38 @@ func RunMaster(conf Config) {
 			for i := 0; i < conf.EDA.Population/conf.EDA.Tournament; i++ {
 				sender.SendBytes(w.Bytes(), 0)
 			}
-		}(write)
+		}(&write)
 
+		// var read bytes.Buffer
+		// decoder := gob.NewDecoder(&read)
 		// Capta os individuos vencedores gerados pelos slaves
+
 		for i := 0; i < conf.EDA.Population/conf.EDA.Tournament; {
 			m, err := receiver.RecvBytes(0)
+
 			if err == nil {
 				// json.Unmarshal([]byte(m), &pop[i])
-				read := bytes.NewBuffer(m)
-				decoder := gob.NewDecoder(read)
+				// read := bytes.NewBuffer(m)
+				read.Reset()
+				// fmt.Printf("Buffer len %d and cap %d\n", read.Len(), read.Cap())
+				// fmt.Println(string(m))
+				read.Write(m)
+				fmt.Printf("Buffer len %d and cap %d\n", read.Len(), read.Cap())
+				// decoder := gob.NewDecoder(&read)
 				// decoder.Decode(&pop[i])
-				decoder.Decode(&winner)
+				// fmt.Println(read.String())
+				err = decoder.Decode(&winner)
+				if err != nil {
+					log.Fatal("decode:", err)
+				}
+				fmt.Printf("Buffer len %d and cap %d\n", read.Len(), read.Cap())
+				fmt.Println(winner.Score)
 				// fmt.Println("Winner Score:", pop[i].Score)
 				// Checa pelo ID da probabilidade se o individuo vencedor que chegou foi
 				// gerado pela última probabilidade que foi emitida
 				// if prob.PID == pop[i].PID {
 				if prob.PID == winner.PID {
+					fmt.Printf("PID PROB %d WINNER %d\n", prob.PID, winner.PID)
 					// fmt.Printf("Individuo id: %d rid: %d g: %d, score: %f\n", g*len(pop)+i, pop[i].PID, pop[i].Generation, pop[i].Fitness)
 					// popFitness[i] = pop[i].Fitness
 					// popQ3[i] = pop[i].Q3
@@ -140,7 +171,7 @@ func RunMaster(conf Config) {
 					i++
 				} else {
 					// fmt.Println(prob.PID, pop[i].PID)
-					fmt.Println(prob.PID, winner.PID)
+					fmt.Printf("ERROR PID PROB %d WINNER %d\n", prob.PID, winner.PID)
 				}
 
 			} else {

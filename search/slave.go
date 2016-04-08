@@ -61,13 +61,25 @@ func RunSlave(conf Config) {
 
 	cellAuto := ca.Config{InitState: start, EndState: end, Steps: conf.CA.Steps, IgnoreSteps: conf.CA.IgnoreSteps}
 
+	var read bytes.Buffer
+	// read.Grow(1000000)
+	gob.RegisterName("probs", Probabilities{})
+	decoder := gob.NewDecoder(&read)
+
+	var write bytes.Buffer
+	gob.RegisterName("winner", Individual{})
+	encoder := gob.NewEncoder(&write)
+
 	for {
 		// m é a mensagem com as probabilidades
 		m, conerr = receiver.RecvBytes(0)
 		if conerr == nil {
-			read := bytes.NewBuffer(m)
-			decoder := gob.NewDecoder(read)
+			// read := bytes.NewBuffer(m)
+			// decoder := gob.NewDecoder(read)
+			read.Reset()
+			read.Write(m)
 			decoder.Decode(&prob)
+
 			// json.Unmarshal([]byte(m), &prob)
 			// fmt.Printf("PID: %d, Geracacao: %d\n", prob.PID, prob.Generation)
 
@@ -91,8 +103,9 @@ func RunSlave(conf Config) {
 				winner.Score = math.SmallestNonzeroFloat64
 			}
 
-			write := new(bytes.Buffer)
-			encoder := gob.NewEncoder(write)
+			// write := new(bytes.Buffer)
+			// encoder := gob.NewEncoder(write)
+			write.Reset()
 			encoder.Encode(winner)
 			sender.SendBytes(write.Bytes(), 0)
 			// b, _ = json.Marshal(winner)
