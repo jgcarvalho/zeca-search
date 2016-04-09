@@ -52,10 +52,10 @@ func (newpk *ProbRule) Update(ind *Individual, norm int) {
 	}
 }
 
-func (pk ProbRule) Reset() {
-	for pattern, _ := range pk {
-		for k, _ := range pk[pattern] {
-			pk[pattern][k] = 0.0
+func (pk *ProbRule) Reset() {
+	for pattern, _ := range *pk {
+		for k, _ := range (*pk)[pattern] {
+			(*pk)[pattern][k] = 0.0
 		}
 	}
 }
