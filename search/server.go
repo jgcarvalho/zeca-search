@@ -59,6 +59,17 @@ func RunServer(conf Config) {
 
 }
 
+func (t *MSG) CheckProb(gen *int, getnew *bool) error {
+	CurProb.RLock()
+	defer CurProb.RUnlock()
+	if *gen != CurProb.Prob.Generation {
+		*getnew = true
+	} else {
+		*getnew = false
+	}
+	return nil
+}
+
 func (t *MSG) GetProb(get *int, reply *Probabilities) error {
 	CurProb.RLock()
 	defer CurProb.RUnlock()

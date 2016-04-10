@@ -30,18 +30,29 @@ func RunClient(conf Config) {
 	var rule rules.Rule
 	var score float64
 	var winner Individual
-	var accepted bool
+	var accepted, getnew bool
 	accepted = true
 	q := 1
 
 	cellAuto := ca.Config{InitState: start, EndState: end, Steps: conf.CA.Steps, IgnoreSteps: conf.CA.IgnoreSteps}
+	err = client.Call("MSG.GetProb", &q, &prob)
+	if err != nil {
+		log.Fatal("get prob error:", err)
+	}
 
 	g := 0
 	for g < conf.EDA.Generations {
-		err = client.Call("MSG.GetProb", &q, &prob)
+		err = client.Call("MSG.CheckProb", &prob.Generation, &getnew)
 		if err != nil {
-			log.Fatal("get prob error:", err)
+			log.Fatal("check prob error:", err)
 		}
+		if getnew {
+			err = client.Call("MSG.GetProb", &q, &prob)
+			if err != nil {
+				log.Fatal("get prob error:", err)
+			}
+		}
+
 		if !accepted {
 			if g != prob.Generation {
 				g = prob.Generation
