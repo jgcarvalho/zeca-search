@@ -72,7 +72,7 @@ func RunClient(conf Config) {
 			// fmt.Println("Rule ok")
 			// fmt.Println(start, end, tourn, ind, b, rule)
 			score = cellAuto.Run(rule)
-			// fmt.Println(score)
+			fmt.Printf("Ind %d, score %f\n", i, score)
 			if i == 0 {
 				winner = Individual{Generation: prob.Generation, Rule: &rule, Score: score}
 			} else {
