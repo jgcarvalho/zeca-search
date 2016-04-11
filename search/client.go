@@ -9,7 +9,6 @@ import (
 
 	"github.com/jgcarvalho/zeca-search/ca"
 	"github.com/jgcarvalho/zeca-search/db"
-	"github.com/jgcarvalho/zeca-search/rules"
 )
 
 func RunClient(conf Config) {
@@ -27,7 +26,7 @@ func RunClient(conf Config) {
 	}
 
 	var prob Probabilities
-	var rule rules.Rule
+	// var rule rules.Rule
 	var score float64
 	var winner Individual
 	var accepted, getnew bool
@@ -67,7 +66,7 @@ func RunClient(conf Config) {
 
 		for i := 0; i < conf.EDA.Tournament; i++ {
 			// fmt.Println("Generating rule")
-			rule = GenRule(prob)
+			rule := GenRule(prob)
 			// fmt.Println(prob)
 			// fmt.Println("Rule ok")
 			// fmt.Println(start, end, tourn, ind, b, rule)

@@ -32,23 +32,29 @@ func LoadProteinsFromBoltDB(dirname, dbname, bucket string) []Protein {
 	}
 
 	var result []Protein
-	var prot Protein
+	// var prot Protein
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
+		n := b.Stats().KeyN
+		result = make([]Protein, n)
+		i := 0
 		b.ForEach(func(k, v []byte) error {
-			err := json.Unmarshal(v, &prot)
+			err := json.Unmarshal(v, &result[i])
 			if err != nil {
 				fmt.Println("DB error:", err)
-			} else {
-				result = append(result, prot)
 			}
+			i++
+			// } else {
+			// 	fmt.Println(prot)
+			// 	result = append(result, prot)
+			// }
 
 			// fmt.Printf("key=%s, value=%s\n", k, v)
 			return nil
 		})
 		return nil
 	})
-	fmt.Println(result)
+	// fmt.Println(result)
 	return result
 }
 
@@ -77,5 +83,7 @@ func GetProteins(db Config) (start, end []string, e error) {
 	if len(start) != len(end) {
 		e = fmt.Errorf("Error: Number of CA start cells is different from end cells")
 	}
+	fmt.Println(start)
+	fmt.Println(end)
 	return start, end, e
 }
