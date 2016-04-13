@@ -4,8 +4,10 @@ import (
 	// "github.com/jgcarvalho/zeca/ca"
 	"encoding/json"
 	"log"
+	"math/rand"
 	"reflect"
 	"strings" // "gopkg.in/mgo.v2"
+	"time"
 
 	"github.com/boltdb/bolt"
 	//"labix.org/v2/mgo/bson"
@@ -32,7 +34,6 @@ func LoadProteinsFromBoltDB(dirname, dbname, bucket string) []Protein {
 	}
 
 	var result []Protein
-	// var prot Protein
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
 		n := b.Stats().KeyN
@@ -44,12 +45,6 @@ func LoadProteinsFromBoltDB(dirname, dbname, bucket string) []Protein {
 				fmt.Println("DB error:", err)
 			}
 			i++
-			// } else {
-			// 	fmt.Println(prot)
-			// 	result = append(result, prot)
-			// }
-
-			// fmt.Printf("key=%s, value=%s\n", k, v)
 			return nil
 		})
 		return nil
@@ -64,21 +59,20 @@ func (c *Protein) getField(field string) []string {
 	return s.Interface().([]string)
 }
 
-// TODO change string to []string
 func GetProteins(db Config) (start, end []string, e error) {
+	rand.Seed(time.Now().UTC().UnixNano())
 	proteins := LoadProteinsFromBoltDB(db.Dir, db.Name, db.Bucket)
+	var get int
+	n := 10
 	start = []string{"#"}
 	end = []string{"#"}
-	for i := 0; i < len(proteins); i++ {
-		// start = append(start, strings.Split(proteins[i].getField(strings.Title(db.Init)), "")...)
-		start = append(start, proteins[i].getField(strings.Title(db.Init))...)
+	// for i := 0; i < len(proteins); i++ {
+	for i := 0; i < n; i++ {
+		get = rand.Intn(len(proteins))
+		start = append(start, proteins[get].getField(strings.Title(db.Init))...)
 		start = append(start, "#")
-		end = append(end, proteins[i].getField(strings.Title(db.Target))...)
+		end = append(end, proteins[get].getField(strings.Title(db.Target))...)
 		end = append(end, "#")
-		// start += proteins[i].getField(strings.Title(db.Init)) + "#"
-		// end += proteins[i].getField(strings.Title(db.Target)) + "#"
-		// start += proteins[i].Chains[0].getField(strings.Title(db.Init)) + "#"
-		// end += proteins[i].Chains[0].getField(strings.Title(db.Target)) + "#"
 	}
 	if len(start) != len(end) {
 		e = fmt.Errorf("Error: Number of CA start cells is different from end cells")
