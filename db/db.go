@@ -4,10 +4,8 @@ import (
 	// "github.com/jgcarvalho/zeca/ca"
 	"encoding/json"
 	"log"
-	"math/rand"
 	"reflect"
 	"strings" // "gopkg.in/mgo.v2"
-	"time"
 
 	"github.com/boltdb/bolt"
 	//"labix.org/v2/mgo/bson"
@@ -27,32 +25,6 @@ type Config struct {
 	Target string `toml:"target"`
 }
 
-func LoadProteinsFromBoltDB(dirname, dbname, bucket string) []Protein {
-	db, err := bolt.Open(dirname+dbname, 0666, &bolt.Options{ReadOnly: true})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var result []Protein
-	db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
-		n := b.Stats().KeyN
-		result = make([]Protein, n)
-		i := 0
-		b.ForEach(func(k, v []byte) error {
-			err := json.Unmarshal(v, &result[i])
-			if err != nil {
-				fmt.Println("DB error:", err)
-			}
-			i++
-			return nil
-		})
-		return nil
-	})
-	// fmt.Println(result)
-	return result
-}
-
 func (c *Protein) getField(field string) []string {
 	r := reflect.ValueOf(c)
 	s := reflect.Indirect(r).FieldByName(field)
@@ -60,20 +32,30 @@ func (c *Protein) getField(field string) []string {
 }
 
 func GetProteins(db Config) (start, end []string, e error) {
-	rand.Seed(time.Now().UTC().UnixNano())
-	proteins := LoadProteinsFromBoltDB(db.Dir, db.Name, db.Bucket)
-	var get int
-	n := 10
+	dbase, err := bolt.Open(db.Dir+db.Name, 0666, &bolt.Options{ReadOnly: true})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	start = []string{"#"}
 	end = []string{"#"}
-	// for i := 0; i < len(proteins); i++ {
-	for i := 0; i < n; i++ {
-		get = rand.Intn(len(proteins))
-		start = append(start, proteins[get].getField(strings.Title(db.Init))...)
-		start = append(start, "#")
-		end = append(end, proteins[get].getField(strings.Title(db.Target))...)
-		end = append(end, "#")
-	}
+
+	var result Protein
+	dbase.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(db.Bucket))
+		b.ForEach(func(k, v []byte) error {
+			err := json.Unmarshal(v, &result)
+			if err != nil {
+				fmt.Println("DB error:", err)
+			}
+			start = append(start, result.getField(strings.Title(db.Init))...)
+			start = append(start, "#")
+			end = append(end, result.getField(strings.Title(db.Target))...)
+			end = append(end, "#")
+			return nil
+		})
+		return nil
+	})
 	if len(start) != len(end) {
 		e = fmt.Errorf("Error: Number of CA start cells is different from end cells")
 	}
