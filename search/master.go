@@ -1,11 +1,5 @@
 package search
 
-import (
-	"fmt"
-	"math"
-	"os"
-)
-
 //
 // import (
 // 	"bytes"
@@ -223,17 +217,18 @@ import (
 // 	// best.Rule = make(ind.Rule
 // }
 //
-func SaveBest(best *Individual) {
-	f, err := os.Create("best.rule")
-	if err != nil {
-		fmt.Println("Error writing probabilities", err)
-		panic(err)
-	}
-	defer f.Close()
 
-	rule := best.Rule
-	for k, v := range *rule {
-		f.WriteString(fmt.Sprintf("[ %s ][ %s ][ %s ] -> [ %s ]\n", k[0], k[1], k[2], v))
-	}
-	f.WriteString(fmt.Sprintf("# Score: %.5f, Correct States: %.2f %%\n", best.Score, 100.0*math.Exp(best.Score)))
-}
+// func SaveBest(best *Individual) {
+// 	f, err := os.Create("best.rule")
+// 	if err != nil {
+// 		fmt.Println("Error writing probabilities", err)
+// 		panic(err)
+// 	}
+// 	defer f.Close()
+//
+// 	rule := best.Rule
+// 	for k, v := range *rule {
+// 		f.WriteString(fmt.Sprintf("[ %s ][ %s ][ %s ] -> [ %s ]\n", k[0], k[1], k[2], v))
+// 	}
+// 	f.WriteString(fmt.Sprintf("# Score: %.5f, Correct States: %.2f %%\n", best.Score, 100.0*math.Exp(best.Score)))
+// }

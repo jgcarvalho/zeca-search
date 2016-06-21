@@ -106,7 +106,7 @@ func (t *MSG) SendWinner(winner *Individual, accepted *bool) error {
 			incoming.NewProb.Data.Reset()
 			incoming.N = 0
 			fmt.Printf("BEST Score: %.5f, Correct States: %.2f %%\n", incoming.BestScore, 100.0*math.Exp(incoming.BestScore))
-			SaveBest(incoming.Best)
+			// SaveBest(incoming.Best)
 
 		}
 	} else {

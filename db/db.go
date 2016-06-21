@@ -8,6 +8,7 @@ import (
 	"strings" // "gopkg.in/mgo.v2"
 
 	"github.com/boltdb/bolt"
+	"github.com/jgcarvalho/zeca-search/rules"
 	//"labix.org/v2/mgo/bson"
 	"fmt"
 )
@@ -31,14 +32,14 @@ func (c *Protein) getField(field string) []string {
 	return s.Interface().([]string)
 }
 
-func GetProteins(db Config) (start, end []string, e error) {
+func GetProteins(db Config) (start, end []rules.State, e error) {
 	dbase, err := bolt.Open(db.Dir+db.Name, 0666, &bolt.Options{ReadOnly: true})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	start = []string{"#"}
-	end = []string{"#"}
+	strStart := []string{"#"}
+	strEnd := []string{"#"}
 
 	var result Protein
 	dbase.View(func(tx *bolt.Tx) error {
@@ -48,18 +49,26 @@ func GetProteins(db Config) (start, end []string, e error) {
 			if err != nil {
 				fmt.Println("DB error:", err)
 			}
-			start = append(start, result.getField(strings.Title(db.Init))...)
-			start = append(start, "#")
-			end = append(end, result.getField(strings.Title(db.Target))...)
-			end = append(end, "#")
+			strStart = append(strStart, result.getField(strings.Title(db.Init))...)
+			strStart = append(strStart, "#")
+			strEnd = append(strEnd, result.getField(strings.Title(db.Target))...)
+			strEnd = append(strEnd, "#")
 			return nil
 		})
 		return nil
 	})
-	if len(start) != len(end) {
-		e = fmt.Errorf("Error: Number of CA start cells is different from end cells")
+	if len(strStart) != len(strEnd) {
+		e = fmt.Errorf("Error: Number of CA strStart cells is different from strEnd cells")
 	}
-	fmt.Println(start)
-	fmt.Println(end)
+	fmt.Println(strStart)
+	fmt.Println(strEnd)
+
+	start = make([]rules.State, len(strStart))
+	end = make([]rules.State, len(strEnd))
+
+	for i := range strStart {
+		start[i] = rules.String2State(strStart[i])
+		end[i] = rules.String2State(strEnd[i])
+	}
 	return start, end, e
 }

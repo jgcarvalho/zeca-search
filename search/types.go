@@ -12,9 +12,11 @@ type Individual struct {
 	Score float64
 }
 
-type Probability map[string]float64
-
-type ProbRule map[rules.Pattern]Probability
+// type Probability map[string]float64
+//
+// type ProbRule map[rules.Pattern]Probability
+type Probability [4]float64
+type ProbRule [rules.NumStates][rules.NumStates][rules.NumStates]Probability
 
 // type ProbRule map[[3]string]Probability
 
