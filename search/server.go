@@ -43,8 +43,8 @@ func RunServer(conf Config) {
 	incoming.NMax = conf.EDA.Population / conf.EDA.Tournament
 	incoming.Score = make([]float64, conf.EDA.Population/conf.EDA.Tournament)
 	incoming.NewProb.Generation = 1
-	incoming.NewProb.Data = ReadProbRule(conf.Rules.Input)
-	incoming.NewProb.Data.Reset()
+	// incoming.NewProb.Data = ReadProbRule(conf.Rules.Input)
+	// incoming.NewProb.Data.Reset()
 	incoming.BestScore = -math.MaxFloat64
 	incoming.Unlock()
 
@@ -76,6 +76,7 @@ func (t *MSG) GetProb(get *int, reply *Probabilities) error {
 	*reply = Probabilities{Generation: CurProb.Prob.Generation, Data: CurProb.Prob.Data}
 	// fmt.Println(*reply)
 	// fmt.Println(reply)
+	// fmt.Println(CurProb.Prob.Data)
 	return nil
 }
 
@@ -100,10 +101,13 @@ func (t *MSG) SendWinner(winner *Individual, accepted *bool) error {
 			CurProb.Lock()
 			CurProb.Prob.Save("prob_g" + strconv.Itoa(CurProb.Prob.Generation))
 			CurProb.Prob.Generation = incoming.NewProb.Generation
-			CurProb.Prob.Data.Copy(incoming.NewProb.Data)
+			// CurProb.Prob.Data.Copy(incoming.NewProb.Data)
+			CurProb.Prob.Data = incoming.NewProb.Data
 			CurProb.Unlock()
 			incoming.NewProb.Generation++
-			incoming.NewProb.Data.Reset()
+			// incoming.NewProb.Data.Reset()
+			incoming.NewProb.Data = InitProbRule()
+			// fmt.Println(incoming.NewProb.Data)
 			incoming.N = 0
 			fmt.Printf("BEST Score: %.5f, Correct States: %.2f %%\n", incoming.BestScore, 100.0*math.Exp(incoming.BestScore))
 			// SaveBest(incoming.Best)

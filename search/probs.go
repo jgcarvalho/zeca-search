@@ -57,25 +57,34 @@ func ReadProbRule(fn string) ProbRule {
 }
 
 func (newpk *ProbRule) Update(ind *Individual, norm int) {
-	// for ln := range ind.Rule {
-	// 	for c := range ind.Rule[ln] {
-	// 		for rn := range ind.Rule[ln][c] {
-	for ln := 0; ln < rules.NumStates; ln++ {
-		for c := 0; c < rules.NumStates; c++ {
-			for rn := 0; c < rules.NumStates; rn++ {
-				fmt.Println(ln, c, rn, ind.Rule[ln][c][rn])
+	valid := make([]uint8, 0)
+	var i uint8
+	for i = 0; i < rules.NumStates; i++ {
+		if ind.Rule[0][0][i] != 0 {
+			valid = append(valid, i)
+		}
+	}
+	// fmt.Println(valid)
+	// for ln := 0; ln < rules.NumStates; ln++ {
+	// 	for c := 0; c < rules.NumStates; c++ {
+	// 		for rn := 0; c < rules.NumStates; rn++ {
+	for _, ln := range valid {
+		for _, c := range valid {
+			for _, rn := range valid {
+				// fmt.Println(ln, c, rn, ind.Rule[ln][c][rn])
 				switch ind.Rule[ln][c][rn] {
 				case rules.S_c, rules.S_cn, rules.S_cp, rules.S_cG, rules.S_cP, rules.S_cneg, rules.S_cpos:
-					newpk[ln][c][rn][0] += 1.0 / float64(norm)
+					(*newpk)[ln][c][rn][0] += 1.0 / float64(norm)
 				case rules.S_h, rules.S_hn, rules.S_hp, rules.S_hG, rules.S_hP, rules.S_hneg, rules.S_hpos:
-					newpk[ln][c][rn][1] += 1.0 / float64(norm)
+					(*newpk)[ln][c][rn][1] += 1.0 / float64(norm)
 				case rules.S_e, rules.S_en, rules.S_ep, rules.S_eG, rules.S_eP, rules.S_eneg, rules.S_epos:
-					newpk[ln][c][rn][2] += 1.0 / float64(norm)
+					(*newpk)[ln][c][rn][2] += 1.0 / float64(norm)
 				case rules.S_init:
-					newpk[ln][c][rn][3] += 1.0 / float64(norm)
+					(*newpk)[ln][c][rn][3] += 1.0 / float64(norm)
 					// default:
 					// panic(ind.Rule[ln][c][rn])
 				}
+				// fmt.Println((*newpk)[ln][c][rn])
 			}
 		}
 	}
@@ -88,9 +97,16 @@ func (newpk *ProbRule) Update(ind *Individual, norm int) {
 // }
 //
 
-func (pk *ProbRule) Reset() {
+// func (pk *ProbRule) Reset() {
+// 	var newpk ProbRule
+// 	pk = &newpk
+// 	fmt.Println(pk)
+// 	fmt.Println("RESET")
+// }
+
+func InitProbRule() ProbRule {
 	var newpk ProbRule
-	pk = &newpk
+	return newpk
 }
 
 // func (pk *ProbRule) Reset() {
@@ -102,9 +118,18 @@ func (pk *ProbRule) Reset() {
 // }
 //
 
-func (pk ProbRule) Copy(newpk ProbRule) {
-	pk = newpk
-}
+// func (pk ProbRule) Copy(newpk ProbRule) {
+// 	// pk = newpk
+// 	for i := 0; i < len(pk); i++ {
+// 		for j := 0; j < len(pk[i]); j++ {
+// 			for k := 0; k < len(pk[i][j]); k++ {
+// 				for v := 0; v < len(pk[i][j][k]); v++ {
+// 					pk[i][j][k][v] = newpk[i][j][k][v]
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
 // func (pk ProbRule) Copy(newPk ProbRule) {
 // 	for pattern, _ := range newPk {

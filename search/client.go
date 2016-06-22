@@ -50,6 +50,8 @@ func RunClient(conf Config) {
 			if err != nil {
 				log.Fatal("get prob error:", err)
 			}
+			// fmt.Println(prob.Data)
+			// fmt.Println(prob.Generation)
 		}
 
 		if !accepted {
@@ -67,7 +69,7 @@ func RunClient(conf Config) {
 		for i := 0; i < conf.EDA.Tournament; i++ {
 			// fmt.Println("Generating rule")
 			rule := GenRule(prob)
-			// fmt.Println(prob)
+			// fmt.Println(prob.Data)
 			// fmt.Println("Rule ok")
 			// fmt.Println(start, end, tourn, ind, b, rule)
 			score = cellAuto.Run(rule)
@@ -90,5 +92,6 @@ func RunClient(conf Config) {
 		if err != nil {
 			log.Fatal("send winner error:", err)
 		}
+		// fmt.Println(prob.Generation, accepted)
 	}
 }

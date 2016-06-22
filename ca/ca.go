@@ -96,20 +96,100 @@ func step(previous, current, init, end *[]rules.State, occurrence *[]int, rule *
 		if (*current)[c] == rules.S_init {
 			(*current)[c] = (*init)[c]
 		}
-		if use {
-			// need change to consider neighbors
-			if (*current)[c] == (*end)[c] || (*end)[c] == rules.S_init {
-				(*occurrence)[c]++
-			}
-		}
-		// (*current)[c] = (*rule)[rules.Pattern{(*previous)[c-1], (*previous)[c], (*previous)[c+1]}]
-		// if string((*current)[c][0]) == "?" {
-		// 	(*current)[c] = (*init)[c]
-		// }
 		// if use {
-		// 	if (*current)[c] == (*end)[c] || string((*end)[c]) == "?" {
+		// 	// need change to consider neighbors
+		// 	if (*current)[c] == (*end)[c] || (*end)[c] == rules.S_init {
 		// 		(*occurrence)[c]++
 		// 	}
 		// }
 	}
+
+	if use {
+		countOcc(current, end, occurrence)
+	}
+}
+
+func countOcc(curr, end *[]rules.State, occurrence *[]int) {
+	var check bool
+	for c := 1; c < len(*end)-1; c++ {
+		switch (*end)[c] {
+		case rules.S_e, rules.S_en, rules.S_ep, rules.S_eG, rules.S_eP, rules.S_eneg, rules.S_epos:
+			if (c > 0) && (c < len(*end)-3) && !check {
+				if testE3((*curr)[c], (*curr)[c+1], (*curr)[c+2]) {
+					(*occurrence)[c]++
+					break
+				}
+			}
+			if (c > 1) && (c < len(*end)-2) && !check {
+				if testE3((*curr)[c-1], (*curr)[c], (*curr)[c+1]) {
+					(*occurrence)[c]++
+					break
+				}
+			}
+			if (c > 2) && (c < len(*end)-1) && !check {
+				if testE3((*curr)[c-2], (*curr)[c-1], (*curr)[c]) {
+					(*occurrence)[c]++
+					break
+				}
+			}
+		case rules.S_h, rules.S_hn, rules.S_hp, rules.S_hG, rules.S_hP, rules.S_hneg, rules.S_hpos:
+			if (c > 0) && (c < len(*end)-3) && !check {
+				if testH3((*curr)[c], (*curr)[c+1], (*curr)[c+2]) {
+					(*occurrence)[c]++
+					break
+				}
+			}
+			if (c > 1) && (c < len(*end)-2) && !check {
+				if testH3((*curr)[c-1], (*curr)[c], (*curr)[c+1]) {
+					(*occurrence)[c]++
+					break
+				}
+			}
+			if (c > 2) && (c < len(*end)-1) && !check {
+				if testH3((*curr)[c-2], (*curr)[c-1], (*curr)[c]) {
+					(*occurrence)[c]++
+					break
+				}
+			}
+		case rules.S_c, rules.S_cn, rules.S_cp, rules.S_cG, rules.S_cP, rules.S_cneg, rules.S_cpos:
+			if (c > 0) && (c < len(*end)-3) && !check {
+				if testH3((*curr)[c], (*curr)[c+1], (*curr)[c+2]) || testE3((*curr)[c], (*curr)[c+1], (*curr)[c+2]) {
+					break
+				}
+			}
+			if (c > 1) && (c < len(*end)-2) && !check {
+				if testH3((*curr)[c-1], (*curr)[c], (*curr)[c+1]) || testE3((*curr)[c-1], (*curr)[c], (*curr)[c+1]) {
+					break
+				}
+			}
+			if (c > 2) && (c < len(*end)-1) && !check {
+				if testH3((*curr)[c-2], (*curr)[c-1], (*curr)[c]) || testE3((*curr)[c-2], (*curr)[c-1], (*curr)[c]) {
+					break
+				}
+			}
+			(*occurrence)[c]++
+		}
+	}
+}
+
+func testE3(p0, p1, p2 rules.State) bool {
+	if p0 == rules.S_e || p0 == rules.S_en || p0 == rules.S_ep || p0 == rules.S_eG || p0 == rules.S_eP || p0 == rules.S_eneg || p0 == rules.S_epos {
+		if p1 == rules.S_e || p1 == rules.S_en || p1 == rules.S_ep || p1 == rules.S_eG || p1 == rules.S_eP || p1 == rules.S_eneg || p1 == rules.S_epos {
+			if p2 == rules.S_e || p2 == rules.S_en || p2 == rules.S_ep || p2 == rules.S_eG || p2 == rules.S_eP || p2 == rules.S_eneg || p2 == rules.S_epos {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func testH3(p0, p1, p2 rules.State) bool {
+	if p0 == rules.S_h || p0 == rules.S_hn || p0 == rules.S_hp || p0 == rules.S_hG || p0 == rules.S_hP || p0 == rules.S_hneg || p0 == rules.S_hpos {
+		if p1 == rules.S_h || p1 == rules.S_hn || p1 == rules.S_hp || p1 == rules.S_hG || p1 == rules.S_hP || p1 == rules.S_hneg || p1 == rules.S_hpos {
+			if p2 == rules.S_h || p2 == rules.S_hn || p2 == rules.S_hp || p2 == rules.S_hG || p2 == rules.S_hP || p2 == rules.S_hneg || p2 == rules.S_hpos {
+				return true
+			}
+		}
+	}
+	return false
 }
