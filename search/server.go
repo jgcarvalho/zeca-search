@@ -7,10 +7,12 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"os"
 	"strconv"
 	"sync"
 
 	"github.com/gonum/stat"
+	"github.com/jgcarvalho/zeca-search/rules"
 )
 
 type MSG int
@@ -97,7 +99,8 @@ func (t *MSG) SendWinner(winner *Individual, accepted *bool) error {
 		*accepted = true
 		if incoming.N == incoming.NMax {
 			meanScore, stdScore := stat.MeanStdDev(incoming.Score, nil)
-			fmt.Printf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Correct States: %.2f %%\n", winner.Generation, meanScore, stdScore, 100.0*math.Exp(meanScore))
+			// fmt.Printf("G: %d, Mean Score: %.5f, StdDev Score: %.5f, Correct States: %.2f %%\n", winner.Generation, meanScore, stdScore, 100.0*math.Exp(meanScore))
+			fmt.Printf("G: %d, Mean Score: %.5f, StdDev Score: %.5f\n", winner.Generation, meanScore, stdScore)
 			CurProb.Lock()
 			CurProb.Prob.Save("prob_g" + strconv.Itoa(CurProb.Prob.Generation))
 			CurProb.Prob.Generation = incoming.NewProb.Generation
@@ -109,12 +112,41 @@ func (t *MSG) SendWinner(winner *Individual, accepted *bool) error {
 			incoming.NewProb.Data = InitProbRule()
 			// fmt.Println(incoming.NewProb.Data)
 			incoming.N = 0
-			fmt.Printf("BEST Score: %.5f, Correct States: %.2f %%\n", incoming.BestScore, 100.0*math.Exp(incoming.BestScore))
-			// SaveBest(incoming.Best)
+			// fmt.Printf("BEST Score: %.5f, Correct States: %.2f %%\n", incoming.BestScore, 100.0*math.Exp(incoming.BestScore))
+			fmt.Printf("BEST Score: %.5f\n", incoming.BestScore)
+			SaveBest(incoming.Best)
 
 		}
 	} else {
 		*accepted = false
 	}
 	return nil
+}
+
+func SaveBest(best *Individual) {
+	f, err := os.Create("best.rule")
+	if err != nil {
+		fmt.Println("Error writing probabilities", err)
+		panic(err)
+	}
+	defer f.Close()
+	var v string
+
+	for ln := rules.S__; ln < rules.NumStates; ln++ {
+		for c := rules.S__; c < rules.NumStates; c++ {
+			for rn := rules.S__; rn < rules.NumStates; rn++ {
+				v = rules.State2String(best.Rule[ln][c][rn])
+				if v != "#" {
+					if v == "?" {
+						v = rules.State2String(c)
+					}
+					f.WriteString(fmt.Sprintf("[ %s ][ %s ][ %s ] -> [ %s ]\n", rules.State2String(ln), rules.State2String(c), rules.State2String(rn), v))
+				}
+			}
+		}
+	}
+	// for k, v := range *rule {
+	// 	f.WriteString(fmt.Sprintf("[ %s ][ %s ][ %s ] -> [ %s ]\n", k[0], k[1], k[2], v))
+	// }
+	f.WriteString(fmt.Sprintf("# Score: %.5f\n", best.Score))
 }

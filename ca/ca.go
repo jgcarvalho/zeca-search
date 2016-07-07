@@ -87,7 +87,8 @@ func score(oc []int, end []rules.State, norm int) float64 {
 			}
 		}
 	}
-	return sc / float64(valid)
+	// return sc/float64(valid)
+	return 100.0 * math.Exp(sc/float64(valid))
 }
 
 func step(previous, current, init, end *[]rules.State, occurrence *[]int, rule *rules.Rule, use bool) {

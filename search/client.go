@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"net/rpc"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 )
 
 func RunClient(conf Config) {
+	rand.Seed(time.Now().UTC().UnixNano())
 	client, err := rpc.DialHTTP("tcp", conf.Dist.MasterURL+":2222")
 	if err != nil {
 		log.Fatal("dialing:", err)
