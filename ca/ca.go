@@ -31,6 +31,8 @@ func (conf Config) Run(rule rules.Rule) float64 {
 	current = make([]rules.State, len(init))
 
 	occurrence := make([]int, len(init))
+	hocc := make([]uint, len(init))
+	eocc := make([]uint, len(init))
 	occurrence[0], occurrence[len(init)-1] = conf.Steps-conf.IgnoreSteps, conf.Steps-conf.IgnoreSteps
 
 	// set begin and end equals to # (static states)
@@ -44,10 +46,10 @@ func (conf Config) Run(rule rules.Rule) float64 {
 			use = true
 		}
 		if i%2 == 0 {
-			step(&previous, &current, &init, &end, &occurrence, &rule, use)
+			step(&previous, &current, &init, &end, &occurrence, &hocc, &eocc, &rule, use)
 			// fmt.Println(current)
 		} else {
-			step(&current, &previous, &init, &end, &occurrence, &rule, use)
+			step(&current, &previous, &init, &end, &occurrence, &hocc, &eocc, &rule, use)
 			// fmt.Println(previous)
 		}
 
@@ -91,7 +93,7 @@ func score(oc []int, end []rules.State, norm int) float64 {
 	return 100.0 * math.Exp(sc/float64(valid))
 }
 
-func step(previous, current, init, end *[]rules.State, occurrence *[]int, rule *rules.Rule, use bool) {
+func step(previous, current, init, end *[]rules.State, occurrence *[]int, hocc, eocc *[]uint, rule *rules.Rule, use bool) {
 	for c := 1; c < len(*init)-1; c++ {
 		(*current)[c] = (*rule)[(*previous)[c-1]][(*previous)[c]][(*previous)[c+1]]
 		if (*current)[c] == rules.S_init {
@@ -106,7 +108,37 @@ func step(previous, current, init, end *[]rules.State, occurrence *[]int, rule *
 	}
 
 	if use {
-		countOcc(current, end, occurrence)
+		countOcc2(current, end, occurrence, hocc, eocc)
+	}
+}
+
+func countOcc2(curr, end *[]rules.State, occurrence *[]int, hocc *[]uint, eocc *[]uint) {
+	// h := make([]uint, len(*curr))
+	// e := make([]uint, len(*curr))
+	for c := 1; c < len(*end)-1; c++ {
+		if testE3((*curr)[c-1], (*curr)[c], (*curr)[c+1]) {
+			(*eocc)[c-1], (*eocc)[c], (*eocc)[c+1] = 1, 1, 1
+		} else if testH3((*curr)[c-1], (*curr)[c], (*curr)[c+1]) {
+			(*hocc)[c-1], (*hocc)[c], (*hocc)[c+1] = 1, 1, 1
+		}
+	}
+	for c := 1; c < len(*end)-1; c++ {
+		switch (*end)[c] {
+		case rules.S_e, rules.S_en, rules.S_ep, rules.S_eG, rules.S_eP, rules.S_eneg, rules.S_epos:
+			if (*eocc)[c] == 1 {
+				(*occurrence)[c]++
+			}
+		case rules.S_h, rules.S_hn, rules.S_hp, rules.S_hG, rules.S_hP, rules.S_hneg, rules.S_hpos:
+			if (*hocc)[c] == 1 {
+				(*occurrence)[c]++
+			}
+		case rules.S_c, rules.S_cn, rules.S_cp, rules.S_cG, rules.S_cP, rules.S_cneg, rules.S_cpos:
+			if (*eocc)[c] != 1 && (*hocc)[c] != 1 {
+				(*occurrence)[c]++
+			}
+		}
+		(*eocc)[c] = 0
+		(*hocc)[c] = 0
 	}
 }
 
