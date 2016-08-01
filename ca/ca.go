@@ -99,17 +99,19 @@ func step(previous, current, init, end *[]rules.State, occurrence *[]int, hocc, 
 		if (*current)[c] == rules.S_init {
 			(*current)[c] = (*init)[c]
 		}
-		// if use {
-		// 	// need change to consider neighbors
-		// 	if (*current)[c] == (*end)[c] || (*end)[c] == rules.S_init {
-		// 		(*occurrence)[c]++
-		// 	}
-		// }
+		if use {
+			// ocurrence doesn't look to neighbors
+			if (*current)[c] == (*end)[c] || (*end)[c] == rules.S_init {
+				(*occurrence)[c]++
+			}
+		}
 	}
 
-	if use {
-		countOcc2(current, end, occurrence, hocc, eocc)
-	}
+	// This occurrence look to neighbors *IF IN USE, COMMENT THE OCC CODE ABOVE
+	// if use {
+	// 	// countOcc(current, end, occurrence)
+	// 	countOcc2(current, end, occurrence, hocc, eocc)
+	// }
 }
 
 func countOcc2(curr, end *[]rules.State, occurrence *[]int, hocc *[]uint, eocc *[]uint) {
