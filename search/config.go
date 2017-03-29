@@ -12,7 +12,7 @@ type Config struct {
 	Rules rules.Config
 	DB    db.Config
 	CA    ca.Config
-	Dist  distConfig
+	// Dist  distConfig
 }
 
 type edaConfig struct {
@@ -23,8 +23,8 @@ type edaConfig struct {
 	SaveSteps   int    `toml:"save-steps"`
 }
 
-type distConfig struct {
-	MasterURL string `toml:"master-url"`
-	PortA     string `toml:"port-a"`
-	PortB     string `toml:"port-b"`
-}
+// type distConfig struct {
+// 	MasterURL string `toml:"master-url"`
+// 	PortA     string `toml:"port-a"`
+// 	PortB     string `toml:"port-b"`
+// }

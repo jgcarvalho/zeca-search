@@ -8,15 +8,25 @@ import (
 	"net/rpc"
 	"time"
 
+	"os"
+
 	"github.com/jgcarvalho/zeca-search/ca"
 	"github.com/jgcarvalho/zeca-search/db"
 )
 
-func RunClient(conf Config) {
+func RunClient(serverIP string) {
 	rand.Seed(time.Now().UTC().UnixNano())
-	client, err := rpc.DialHTTP("tcp", conf.Dist.MasterURL+":2222")
+	// TODO change to receive server IP
+	client, err := rpc.DialHTTP("tcp", serverIP+":2222")
 	if err != nil {
 		log.Fatal("dialing:", err)
+	}
+	// TODO get config from server
+	var conf Config
+	host, _ := os.Hostname()
+	err = client.Call("MSG.GetConfig", host, &conf)
+	if err != nil {
+		log.Fatal("getting config", err)
 	}
 
 	// Le os dados das proteinas no DB

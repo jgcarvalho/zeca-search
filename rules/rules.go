@@ -125,6 +125,19 @@ func Transition(c State, st State) State {
 	return s
 }
 
+func SS(c State) string {
+	switch c {
+	case S_h, S_hn, S_hp, S_hG, S_hP, S_hpos, S_hneg:
+		return "helix"
+	case S_e, S_en, S_ep, S_eG, S_eP, S_epos, S_eneg:
+		return "strand"
+	case S_c, S_cn, S_cp, S_cG, S_cP, S_cpos, S_cneg:
+		return "coil"
+	default:
+		return "none"
+	}
+}
+
 func String2State(st string) State {
 	var s State
 	switch st {

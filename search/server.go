@@ -34,8 +34,10 @@ type Incoming struct {
 
 var CurProb CurrentProb
 var incoming Incoming
+var exportedConf Config
 
 func RunServer(conf Config) {
+	exportedConf = conf
 	CurProb.Lock()
 	CurProb.Prob.Generation = 0
 	CurProb.Prob.Data = ReadProbRule(conf.Rules.Input)
@@ -59,6 +61,12 @@ func RunServer(conf Config) {
 	}
 	http.Serve(l, nil)
 
+}
+
+func (t *MSG) GetConfig(clientIP string, reply *Config) error {
+	fmt.Printf("Sending config to host: %s\n", clientIP)
+	*reply = exportedConf
+	return nil
 }
 
 func (t *MSG) CheckProb(gen *int, getnew *bool) error {
