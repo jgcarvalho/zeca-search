@@ -16,11 +16,12 @@ type Config struct {
 }
 
 type edaConfig struct {
-	Generations int
-	Population  int
-	Tournament  int
-	OutputProbs string `toml:"output-probabilities"`
-	SaveSteps   int    `toml:"save-steps"`
+	Generations     int
+	Population      int
+	Tournament      int
+	OutputProbs     string `toml:"output-probabilities"`
+	SaveSteps       int    `toml:"save-steps"`
+	FitnessFunction string `toml:"fitness-function"`
 }
 
 // type distConfig struct {

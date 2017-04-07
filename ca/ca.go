@@ -16,6 +16,7 @@ type Config struct {
 	Steps int `toml:"steps"`
 	// Consensus int `toml:"consensus"`
 	IgnoreSteps int `toml:"ignore-steps"`
+	FitFunc     string
 }
 
 func (conf Config) Run(rule rules.Rule) float64 {
@@ -31,7 +32,9 @@ func (conf Config) Run(rule rules.Rule) float64 {
 	copy(previous, init)
 	current = make([]rules.State, len(init))
 
-	var cm [3][3]int
+	// Confusion Matrix
+	var cm [3][4]int
+
 	occurrence := make([]int, len(init))
 	hocc := make([]uint, len(init))
 	eocc := make([]uint, len(init))
@@ -72,12 +75,24 @@ func (conf Config) Run(rule rules.Rule) float64 {
 		// // end change
 	}
 	// fmt.Println(occurrence)
-	fmt.Println(cm)
+	fmt.Println("CM", cm)
 	// fmt.Println("SCORE:", score(occurrence, end, conf.Steps-conf.IgnoreSteps))
-	fmt.Println("Acc", score(occurrence, end, conf.Steps-conf.IgnoreSteps))
+	a := mcc2(cm)
+	b := CBA(cm)
+	// fmt.Println("Acc", score(occurrence, end, conf.Steps-conf.IgnoreSteps))
 	fmt.Println("MCC", mcc(cm))
-	fmt.Println("MCC2", mcc2(cm))
-	return mcc2(cm)
+	fmt.Println("MCC2", a)
+	fmt.Println("CBA", b)
+	switch conf.FitFunc {
+	case "cba+mcc":
+		return a + b
+	case "cba*mcc":
+		return a * b
+	case "cba2*mcc":
+		return a * b * b
+	default:
+		return a + b
+	}
 	// return score(occurrence, end, conf.Steps-conf.IgnoreSteps)
 }
 
@@ -101,7 +116,7 @@ func score(oc []int, end []rules.State, norm int) float64 {
 	return 100.0 * math.Exp(sc/float64(valid))
 }
 
-func mcc(cm [3][3]int) float64 {
+func mcc(cm [3][4]int) float64 {
 	tp := float64(cm[0][0] + cm[1][1] + cm[2][2])
 	tn := float64((cm[1][1] + cm[1][2] + cm[2][1] + cm[2][2]) + (cm[0][0] + cm[0][2] + cm[2][0] + cm[2][2]) + (cm[0][0] + cm[0][1] + cm[1][0] + cm[1][1]))
 	fp := float64((cm[1][0] + cm[2][0]) + (cm[0][1] + cm[2][1]) + (cm[0][2] + cm[1][2]))
@@ -110,12 +125,37 @@ func mcc(cm [3][3]int) float64 {
 	return ((tp * tn) - (fp * fn)) / math.Sqrt((tp+fp)*(tp+fn)*(tn+fp)*(tn+fn))
 }
 
-func mcc2(cm [3][3]int) float64 {
+func mcc2(cm [3][4]int) float64 {
 	n := 2*(cm[0][0]*cm[1][1]-cm[1][0]*cm[0][1]) + 2*(cm[0][0]*cm[2][2]-cm[2][0]*cm[0][2]) + 2*(cm[1][1]*cm[2][2]-cm[2][1]*cm[1][2])
 	d1 := (cm[0][0]+cm[1][0]+cm[2][0])*(cm[0][1]+cm[0][2]+cm[1][1]+cm[1][2]+cm[2][1]+cm[2][2]) + (cm[0][1]+cm[1][1]+cm[2][1])*(cm[0][0]+cm[0][2]+cm[1][0]+cm[1][2]+cm[2][0]+cm[2][2]) + (cm[0][2]+cm[1][2]+cm[2][2])*(cm[0][0]+cm[0][1]+cm[1][0]+cm[1][1]+cm[2][0]+cm[2][1])
 	d2 := (cm[0][0]+cm[0][1]+cm[0][2])*(cm[1][0]+cm[1][1]+cm[1][2]+cm[2][0]+cm[2][1]+cm[2][2]) + (cm[1][0]+cm[1][1]+cm[1][2])*(cm[0][0]+cm[0][1]+cm[0][2]+cm[2][0]+cm[2][1]+cm[2][2]) + (cm[2][0]+cm[2][1]+cm[2][2])*(cm[0][0]+cm[0][1]+cm[0][2]+cm[2][0]+cm[2][1]+cm[2][2])
 
 	return float64(n) / (math.Sqrt(float64(d1)) * math.Sqrt(float64(d2)))
+}
+
+func CBA(cm [3][4]int) float64 {
+	nr := len(cm)
+	np := len(cm[0])
+
+	cba := make([]float64, nr)
+
+	for i := 0; i < nr; i++ {
+		ci_, c_i := 0.0, 0.0
+		for j := 0; j < nr; j++ {
+			ci_ += float64(cm[i][j])
+			c_i += float64(cm[j][i])
+		}
+		if nr != np {
+			ci_ += float64(cm[i][nr])
+		}
+		cba[i] = float64(cm[i][i]) / math.Max(ci_, c_i)
+	}
+
+	total := 0.0
+	for t := 0; t < nr; t++ {
+		total += cba[t]
+	}
+	return total / float64(nr)
 }
 
 // func score2(oc []int, end []rules.State, norm int) float64 {
@@ -126,7 +166,7 @@ func mcc2(cm [3][3]int) float64 {
 // 	}
 // }
 
-func step(previous, current, init, end *[]rules.State, cm *[3][3]int, occurrence *[]int, hocc, eocc *[]uint, rule *rules.Rule, use bool) {
+func step(previous, current, init, end *[]rules.State, cm *[3][4]int, occurrence *[]int, hocc, eocc *[]uint, rule *rules.Rule, use bool) {
 	for c := 1; c < len(*init)-1; c++ {
 		(*current)[c] = (*rule)[(*previous)[c-1]][(*previous)[c]][(*previous)[c+1]]
 		if (*current)[c] == rules.S_init {
@@ -145,6 +185,8 @@ func step(previous, current, init, end *[]rules.State, cm *[3][3]int, occurrence
 					(*cm)[0][1]++
 				} else if rules.SS((*current)[c]) == "coil" {
 					(*cm)[0][2]++
+				} else {
+					(*cm)[0][3]++
 				}
 			} else if rules.SS((*end)[c]) == "strand" {
 				if rules.SS((*current)[c]) == "helix" {
@@ -153,6 +195,8 @@ func step(previous, current, init, end *[]rules.State, cm *[3][3]int, occurrence
 					(*cm)[1][1]++
 				} else if rules.SS((*current)[c]) == "coil" {
 					(*cm)[1][2]++
+				} else {
+					(*cm)[1][3]++
 				}
 			} else if rules.SS((*end)[c]) == "coil" {
 				if rules.SS((*current)[c]) == "helix" {
@@ -161,6 +205,8 @@ func step(previous, current, init, end *[]rules.State, cm *[3][3]int, occurrence
 					(*cm)[2][1]++
 				} else if rules.SS((*current)[c]) == "coil" {
 					(*cm)[2][2]++
+				} else {
+					(*cm)[2][3]++
 				}
 			}
 		}

@@ -2,17 +2,19 @@ title = "Distributed EDA config"
 
 [eda]
 	generations = 1000
-	population = 10000
+	population = 1000
 	tournament = 2
 	output-probabilities = "./output-probabilities-eda"
 	save-steps = 1000
+	fitness-function = "cba+mcc" #options are cba+mcc cba*mcc cba2*mcc 
+
 
 [rules]
 	input = "/home/jgcarvalho/gocode/src/github.com/jgcarvalho/zeca-create-rule/rose.rule"
 	output = "./output-rules"
 
 [db]
-	db-dir = "/home/jgcarvalho/"
+	db-dir = "/home/jgcarvalho/zeca-test/"
 	db-name = "chameleonic.db"
 	bucket-name = "proteins"
 	init = "SeqHPRose"

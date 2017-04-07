@@ -45,7 +45,7 @@ func RunClient(serverIP string) {
 	accepted = true
 	q := 1
 
-	cellAuto := ca.Config{InitState: start, EndState: end, Steps: conf.CA.Steps, IgnoreSteps: conf.CA.IgnoreSteps}
+	cellAuto := ca.Config{InitState: start, EndState: end, Steps: conf.CA.Steps, IgnoreSteps: conf.CA.IgnoreSteps, FitFunc: conf.EDA.FitnessFunction}
 	err = client.Call("MSG.GetProb", &q, &prob)
 	if err != nil {
 		log.Fatal("get prob error:", err)
