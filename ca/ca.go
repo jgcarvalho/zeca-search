@@ -84,6 +84,10 @@ func (conf Config) Run(rule rules.Rule) float64 {
 	fmt.Println("MCC2", a)
 	fmt.Println("CBA", b)
 	switch conf.FitFunc {
+	case "mcc":
+		return a
+	case "cba":
+		return b
 	case "cba+mcc":
 		return a + b
 	case "cba*mcc":
@@ -100,7 +104,7 @@ func score(oc []int, end []rules.State, norm int) float64 {
 	var sc, valid float64
 
 	for i := 0; i < len(oc); i++ {
-		// esclui do calculo os estados # (inicio e fim da cadeia) e ? (indeterminado)
+		// exclui do calculo os estados # (inicio e fim da cadeia) e ? (indeterminado)
 		if end[i] != rules.S_init && end[i] != rules.S__ {
 			// if string(end[i][0]) != "?" && string(end[i][0]) != "#" {
 			valid += 1.0
