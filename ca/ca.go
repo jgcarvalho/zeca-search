@@ -26,7 +26,7 @@ func (conf Config) Run(rule rules.Rule) float64 {
 	copy(init, conf.InitState)
 	copy(end, conf.EndState)
 	if len(init) != len(end) {
-		panic("Init and End States have diffent lenghts")
+		panic("Init and End States have diffent lengths")
 	}
 	previous = make([]rules.State, len(conf.InitState))
 	copy(previous, init)
@@ -36,8 +36,8 @@ func (conf Config) Run(rule rules.Rule) float64 {
 	var cm [3][4]int
 
 	occurrence := make([]int, len(init))
-	hocc := make([]uint, len(init))
-	eocc := make([]uint, len(init))
+	// hocc := make([]uint, len(init))
+	// eocc := make([]uint, len(init))
 	// occurrence[0], occurrence[len(init)-1] = conf.Steps-conf.IgnoreSteps, conf.Steps-conf.IgnoreSteps
 
 	// set begin and end equals to # (static states)
@@ -51,10 +51,10 @@ func (conf Config) Run(rule rules.Rule) float64 {
 			use = true
 		}
 		if i%2 == 0 {
-			step(&previous, &current, &init, &end, &cm, &occurrence, &hocc, &eocc, &rule, use)
+			step(&previous, &current, &init, &end, &cm, &occurrence, &rule, use)
 			// fmt.Println(current)
 		} else {
-			step(&current, &previous, &init, &end, &cm, &occurrence, &hocc, &eocc, &rule, use)
+			step(&current, &previous, &init, &end, &cm, &occurrence, &rule, use)
 			// fmt.Println(previous)
 		}
 
@@ -94,8 +94,12 @@ func (conf Config) Run(rule rules.Rule) float64 {
 		return a * b
 	case "cba2*mcc":
 		return a * b * b
+	case "cross_entropy":
+		return CrossEntropy(occurrence, &end, conf.Steps-conf.IgnoreSteps)
+	case "cross_entropy_weighted":
+		return CrossEntropyWeighted(occurrence, &end, conf.Steps-conf.IgnoreSteps)
 	default:
-		return a + b
+		return CrossEntropy(occurrence, &end, conf.Steps-conf.IgnoreSteps)
 	}
 	// return score(occurrence, end, conf.Steps-conf.IgnoreSteps)
 }
@@ -162,6 +166,63 @@ func CBA(cm [3][4]int) float64 {
 	return total / float64(nr)
 }
 
+func CrossEntropy(occurrence []int, end *[]rules.State, steps int) float64 {
+	length := 0
+	ce := 0.0
+	for c := 1; c < len(*end)-1; c++ {
+		if rules.SS((*end)[c]) != "none" {
+			length++
+			if occurrence[c] > 0 {
+				ce += math.Log(float64(occurrence[c]) / float64(steps))
+			} else {
+				ce += math.Log(1.0 / float64(steps))
+			}
+		}
+	}
+	return ce / float64(length)
+}
+
+func CrossEntropyWeighted(occurrence []int, end *[]rules.State, steps int) float64 {
+	length := 0.0
+	length_h := 0.0
+	length_e := 0.0
+	length_c := 0.0
+	ce := 0.0
+	ce_h := 0.0
+	ce_e := 0.0
+	ce_c := 0.0
+	for c := 1; c < len(*end)-1; c++ {
+		if rules.SS((*end)[c]) == "helix" {
+			length_h += 1.0
+			if occurrence[c] > 0 {
+				ce_h += math.Log(float64(occurrence[c]) / float64(steps))
+			} else {
+				ce_h += math.Log(1.0 / float64(steps))
+			}
+		} else if rules.SS((*end)[c]) == "strand" {
+			length_e += 1.0
+			if occurrence[c] > 0 {
+				ce_e += math.Log(float64(occurrence[c]) / float64(steps))
+			} else {
+				ce_e += math.Log(1.0 / float64(steps))
+			}
+		} else if rules.SS((*end)[c]) == "coil" {
+			length_c += 1.0
+			if occurrence[c] > 0 {
+				ce_c += math.Log(float64(occurrence[c]) / float64(steps))
+			} else {
+				ce_c += math.Log(1.0 / float64(steps))
+			}
+		}
+	}
+	length = length_h + length_e + length_c
+	w_h := (length / 3.0) / length_h
+	w_e := (length / 3.0) / length_e
+	w_c := (length / 3.0) / length_c
+	ce = ce_h*w_h + ce_e*w_e + ce_c*w_c
+	return ce / length
+}
+
 // func score2(oc []int, end []rules.State, norm int) float64 {
 // 	for i := 0; i < len(oc); i++ {
 // 		if end[i] != rules.S_init && end[i] != rules.S__ {
@@ -170,7 +231,7 @@ func CBA(cm [3][4]int) float64 {
 // 	}
 // }
 
-func step(previous, current, init, end *[]rules.State, cm *[3][4]int, occurrence *[]int, hocc, eocc *[]uint, rule *rules.Rule, use bool) {
+func step(previous, current, init, end *[]rules.State, cm *[3][4]int, occurrence *[]int, rule *rules.Rule, use bool) {
 	for c := 1; c < len(*init)-1; c++ {
 		(*current)[c] = (*rule)[(*previous)[c-1]][(*previous)[c]][(*previous)[c+1]]
 		if (*current)[c] == rules.S_init {
