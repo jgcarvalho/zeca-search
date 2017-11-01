@@ -6,7 +6,7 @@ title = "Distributed EDA config"
 	tournament = 2
 	output-probabilities = "./output-probabilities-eda"
 	save-steps = 1000
-	fitness-function = "cba+mcc" #options are cba+mcc cba*mcc cba2*mcc 
+	fitness-function = "cba+mcc" #options are cba mcc cba+mcc cba*mcc cba2*mcc cross_entropy cross_entropy_weighted
 
 
 [rules]
